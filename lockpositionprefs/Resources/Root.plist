@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Umum</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>Aktifkan Tweak</string>
+			<key>key</key>
+			<string>enabled</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.yourname.lockposition</string>
+			<key>PostNotification</key>
+			<string>com.yourname.lockposition/prefschanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Posisi Vertikal (Tinggi)</string>
+			<key>footerText</key>
+			<string>Geser ke kiri untuk menaikkan, ke kanan untuk menurunkan tanggal dan jam. Nilai dalam poin.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>key</key>
+			<string>offsetY</string>
+			<key>default</key>
+			<real>0</real>
+			<key>min</key>
+			<real>-300</real>
+			<key>max</key>
+			<real>300</real>
+			<key>showValue</key>
+			<true/>
+			<key>isSegmented</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.yourname.lockposition</string>
+			<key>PostNotification</key>
+			<string>com.yourname.lockposition/prefschanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Posisi Horizontal</string>
+			<key>footerText</key>
+			<string>Geser ke kiri untuk menggeser ke kiri, ke kanan untuk menggeser ke kanan.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>key</key>
+			<string>offsetX</string>
+			<key>default</key>
+			<real>0</real>
+			<key>min</key>
+			<real>-150</real>
+			<key>max</key>
+			<real>150</real>
+			<key>showValue</key>
+			<true/>
+			<key>isSegmented</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.yourname.lockposition</string>
+			<key>PostNotification</key>
+			<string>com.yourname.lockposition/prefschanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>Reset Posisi</string>
+			<key>action</key>
+			<string>resetPosition</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>LockPosition</string>
+</dict>
+</plist>
