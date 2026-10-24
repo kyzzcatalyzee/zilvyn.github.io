@@ -1,0 +1,9 @@
+Package: com.yourname.lockposition
+Name: LockPosition
+Depends: mobilesubstrate, preferenceloader
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Atur posisi tanggal dan jam di lockscreen dari Settings
+Maintainer: yourname
+Author: yourname
+Section: Tweaks
