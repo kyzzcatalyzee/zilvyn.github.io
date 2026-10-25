@@ -1,29 +1,136 @@
-name: Build deb
+name: build
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      scheme:
+        description: "scheme"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - rootless
+          - rootful
+          - roothide
 
 jobs:
-  build:
-    runs-on: macos-latest
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: brew install ldid dpkg
-
-      - name: Install Theos
+      - name: set matrix
+        id: set-matrix
         run: |
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+          SCHEME="${{ github.event.inputs.scheme }}"
+          if [ -z "$SCHEME" ] || [ "$SCHEME" = "all" ]; then
+            echo 'matrix=["rootless","rootful","roothide"]' >> $GITHUB_OUTPUT
+          else
+            echo "matrix=[\"$SCHEME\"]" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Build package
-        run: make package FINALPACKAGE=1
+  build:
+    needs: setup
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        scheme: ${{ fromJson(needs.setup.outputs.matrix) }}
+      fail-fast: false
 
-      - name: Upload deb
+    env:
+      DEVICE_TARGET: "iphone:clang:16.5:14.0"
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: setup theos
+        uses: actions/checkout@v4
+        with:
+          repository: roothide/theos
+          path: theos
+          submodules: recursive
+
+      - name: cache sdks
+        id: cache-sdks
+        uses: actions/cache@v4
+        with:
+          path: theos/sdks
+          key: theos-sdks-16.5
+
+      - name: download sdks
+        if: steps.cache-sdks.outputs.cache-hit != 'true'
+        run: |
+          curl -LO https://github.com/theos/sdks/archive/master.zip
+          unzip -q master.zip
+          mkdir -p theos/sdks
+          mv sdks-master/*.sdk theos/sdks/
+          rm -rf master.zip sdks-master
+
+      - name: set THEOS env var
+        run: echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: install deps
+        run: |
+          brew install ldid make
+          echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+
+      - name: build (${{ matrix.scheme }})
+        run: |
+          SCHEME_FLAG=""
+          if [ "${{ matrix.scheme }}" = "rootless" ]; then
+            SCHEME_FLAG="THEOS_PACKAGE_SCHEME=rootless"
+          elif [ "${{ matrix.scheme }}" = "roothide" ]; then
+            SCHEME_FLAG="THEOS_PACKAGE_SCHEME=roothide"
+          fi
+          make clean
+          make package \
+            ARCHS="arm64 arm64e" \
+            TARGET="$DEVICE_TARGET" \
+            FINALPACKAGE=1 \
+            $SCHEME_FLAG
+
+      - name: upload package (${{ matrix.scheme }})
         uses: actions/upload-artifact@v4
         with:
-          name: LockPosition-deb
+          name: ${{ matrix.scheme }}-package
           path: packages/*.deb
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./all-packages
+          pattern: "*-package"
+          merge-multiple: true
+
+      - name: update nightly release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "./all-packages/*.deb"
+          allowUpdates: true
+          tag: nightly
+          name: "Nightly"
+          body: |
+            This build was automatically generated from the latest commit on `main`.
+            
+            **Commit SHA:** ${{ github.sha }}
+            **Triggered by:** @${{ github.actor }}
+            
+            > [!NOTE]
+            > A nightly build is basically the next update partially done. Additionally, this build might have the old version number but the code itself should has the latest commit.
+          prerelease: true
+          token: ${{ secrets.GITHUB_TOKEN }}
